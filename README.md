@@ -1,11 +1,11 @@
-# Projet ETRS012 - Jumeau Numerique de Ruche IoT (LoRaWAN)
+# Projet ETRS012 - Jumeau Numerique de Ruche IoT (Mode Simulation MQTT)
 
 ## 1) Vision du projet
 
 Ce projet vise a construire un **MVP** (Minimum Viable Prototype) de jumeau numerique pour une ruche connectee.
 L'idee est de comparer un etat **mesure** (capteurs) et un etat **preduit** (modele simple), puis de quantifier l'erreur.
 
-Architecture cible retenue: **LoRaWAN -> MQTT -> Base de donnees temporelle -> Grafana -> Modele**.
+Architecture cible retenue: **App de simulation -> MQTT -> Base de donnees temporelle -> Grafana -> Modele**.
 
 Contrainte principale: projet de cours avec **20 heures** de travail effectif.
 
@@ -16,6 +16,52 @@ Dans quelle mesure un jumeau numerique base sur des donnees capteurs peut-il pre
 Hypothese de travail:
 - Un modele simple base sur l'historique recent peut fournir une prediction utile a court terme.
 - Les erreurs augmentent en conditions atypiques (variation rapide de temperature, variation brusque de masse).
+
+## 2.1) Hypotheses de recherche explicites
+
+- **H1 (prediction court terme)**: sur des conditions nominales, une baseline temporelle doit rester sous un seuil d'erreur defini en amont.
+    - Cible initiale: MAE temperature <= 1.0 C.
+- **H2 (degradation en conditions extremes)**: l'erreur augmente de facon significative lors de variations rapides (meteo, activite intense, rupture de mesure).
+    - Cible initiale: MAE extreme > MAE nominale.
+- **H3 (valeur operationnelle)**: la chaine simulation -> MQTT -> InfluxDB -> Grafana permet une supervision exploitable en quasi temps reel.
+    - Cible initiale: latence de visualisation compatible demo (ordre de quelques secondes).
+
+## 2.2) Demarche de recherche
+
+Demarche inspiree de la recherche appliquee:
+1. Formuler les hypotheses et les criteres de succes.
+2. Definir un protocole de mesure reproductible (variables, frequence, duree).
+3. Collecter et qualifier les donnees (qualite, manquants, valeurs aberrantes).
+4. Evaluer une baseline explicable (pas de modele opaque dans le MVP).
+5. Comparer conditions nominales vs extremes.
+6. Discuter validite, limites et biais.
+
+Le detail du protocole est dans `docs/protocole_experimental.md`.
+
+## 2.3) Decisions scientifiques verrouillees (MVP)
+
+- Frequence de mesure: 1 point / 10 minutes.
+- Duree cible de collecte: 48h, minimum acceptable: 12h.
+- Definition nominale:
+    - |delta temperature| <= 1.5 C sur 30 minutes.
+    - |delta masse| <= 0.20 kg sur 30 minutes.
+- Definition extreme:
+    - |delta temperature| > 1.5 C sur 30 minutes, ou
+    - |delta masse| > 0.20 kg sur 30 minutes.
+- Criteres d'acceptation H1:
+    - MAE nominale temperature <= 1.0 C
+    - RMSE nominale temperature <= 1.3 C
+
+## 2.4) Contrat de donnees (mapping MQTT -> Dataset)
+
+| Source MQTT | Champ dataset exporte | Unite | Obligatoire |
+|---|---|---|---|
+| `timestamp` | `timestamp` | ISO-8601 UTC | recommande |
+| `temperature` | `temperature_real` | C | oui |
+| `mass` | `masse_real` | kg | oui |
+| `battery` | `battery` | V | non |
+
+Regle si `timestamp` absent: utiliser l'heure de reception UTC cote ingestion.
 
 ## 3) Perimetre MVP
 
@@ -46,7 +92,7 @@ Hypothese de travail:
 - Le systeme doit fournir une synthese interpretable des ecarts reel vs predit.
 
 ### 4.2 Exigences techniques
-- Application serveur LoRaWAN retenue: **The Things Network (TTN)**.
+- Source de donnees retenue: application Python de simulation aleatoire.
 - Transport des donnees: MQTT.
 - Stockage principal: base de donnees temporelle (InfluxDB recommande).
 - Visualisation: Grafana.
@@ -69,12 +115,8 @@ Hypothese de travail:
 ## 5) Schema logique du fonctionnement
 
 ```text
-[Ruche + Capteurs]
-[Noeud LoRaWAN]
-    | uplink
-    v
-[Reseau LoRaWAN / TTN]
-    | integration MQTT
+[Application simulatrice]
+    | publication MQTT
     v
 [Broker MQTT]
     | abonnement ingestion
@@ -97,10 +139,8 @@ Hypothese de travail:
 
 ## 6) Technologies retenues
 
-- **LoRaWAN**: communication bas debit, basse conso, longue portee.
-- **Application serveur LoRaWAN: The Things Network (TTN)**.
-- **TTN MQTT Integration**: publication des uplinks en MQTT.
-- **Broker MQTT**: transport des mesures (TTN ou Mosquitto selon setup).
+- **Python simulation app**: generation de telemetry aleatoire temperature/masse.
+- **Broker MQTT**: transport des mesures (Mosquitto ou broker local).
 - **InfluxDB**: stockage series temporelles.
 - **Grafana**: visualisation des mesures en quasi temps reel.
 - **Python 3.10+**: langage principal pour traitement et modelisation rapide.
@@ -114,28 +154,32 @@ Hypothese de travail:
 | Bloc | Objectif | Duree cible |
 |---|---|---:|
 | 1. Cadrage + protocole | Hypothese, variables, protocole de collecte | 2h |
-| 2. Flux LoRaWAN vers MQTT | Publication des mesures et test topics | 4h |
+| 2. App simulation vers MQTT | Publication des mesures et test topics | 4h |
 | 3. MQTT vers base de donnees | Ecriture InfluxDB + verification | 4h |
 | 4. Dashboard Grafana | Panels temperature/masse + verification | 3h |
 | 5. Modele baseline | Export CSV, prediction naive, MAE/RMSE | 4h |
 | 6. Analyse + dossier final | Resultats, ethique, revue, mise en forme | 3h |
 | **Total** |  | **20h** |
 
+### Points de controle scientifiques (jalons)
+
+- **J1 (fin bloc 1)**: hypotheses valides, variables et seuils fixes.
+- **J2 (fin bloc 3)**: flux de donnees stable, qualite minimale verifiee.
+- **J3 (fin bloc 5)**: metriques calculees pour nominal/extreme.
+- **J4 (fin bloc 6)**: interpretation critique + limites + perspectives.
+
 ## 8) Arborescence du projet
 
 ```text
 Lorawan/
-|- Base.html
 |- README.md
-|- Subject.txt
-|- firmware/
-|  \- node_lorawan/
 |- data/
 |  |- raw/
 |  \- processed/
 |     \- hive_timeseries.csv
 |- model/
 |  |- train_eval.py
+|  |- random_data_publisher.py
 |  |- mqtt_to_influx.py
 |  \- metrics.py
 |- dashboard/
@@ -151,10 +195,9 @@ Lorawan/
 
 ## 9) Description des dossiers
 
-- `firmware/node_lorawan/`: code embarque de collecte/transmission (si materiel utilise).
 - `data/raw/`: donnees brutes non modifiees.
 - `data/processed/`: exports nettoyes prets pour analyse modele.
-- `model/`: scripts de prediction et metriques.
+- `model/`: scripts de simulation, ingestion, prediction et metriques.
 - `dashboard/grafana/`: dashboard principal du MVP (obligatoire dans cette version).
 - `docs/`: documents methodologiques et ethiques.
 - `livrables/`: resultats finaux a rendre.
@@ -163,7 +206,8 @@ Lorawan/
 
 - `model/metrics.py`: fonctions `mae` et `rmse`.
 - `model/train_eval.py`: baseline de prediction par decalage temporel.
-- `model/mqtt_to_influx.py`: ingestion MQTT vers InfluxDB (compatible payload direct ou TTN).
+- `model/random_data_publisher.py`: generation de donnees aleatoires vers MQTT.
+- `model/mqtt_to_influx.py`: ingestion MQTT vers InfluxDB.
 - `data/processed/hive_timeseries.csv`: echantillon de donnees de depart.
 
 ## 11) Comment executer localement
@@ -197,6 +241,11 @@ set INFLUX_MEASUREMENT=hive_telemetry
 ### Lancer l'ingestion MQTT vers InfluxDB
 ```bash
 python model/mqtt_to_influx.py
+```
+
+### Lancer le generateur de donnees aleatoires
+```bash
+python model/random_data_publisher.py
 ```
 
 ### Lancer l'evaluation
@@ -235,18 +284,6 @@ Champs minimaux obligatoires:
 
 Le champ `timestamp` est recommande. Si absent, l'heure de reception est utilisee.
 
-### Configuration TTN (rappel)
-
-- Application serveur utilisee: **The Things Network (TTN)**.
-- Source MQTT typique: `eu1.cloud.thethings.network:1883` (ou endpoint de votre region TTN).
-- Topic TTN brut possible:
-
-```text
-v3/<app-id>@ttn/devices/<device-id>/up
-```
-
-Dans ce projet, un topic simplifie `hive/<device_id>/telemetry` est recommande apres normalisation.
-
 ## 13) Criteres de reussite
 
 - Prototype de bout en bout demonstrable, meme sur petit jeu de donnees.
@@ -270,12 +307,14 @@ Dans ce projet, un topic simplifie `hive/<device_id>/telemetry` est recommande a
 - Document ethique argumente.
 - Mini revue de litterature (3 a 5 articles).
 
+Sources de reference utilisees pour cadrer la methode: voir `docs/revue_litterature.md`.
+
 ---
 
 ### Note de pilotage
 
 Regle de priorite pour tenir 20h:
-1. Flux LoRaWAN -> MQTT stable
+1. Flux simulation -> MQTT stable
 2. Ingestion base de donnees + dashboard Grafana
 3. Export CSV + baseline qui tourne
 4. Metriques interpretees

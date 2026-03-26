@@ -58,7 +58,7 @@ def coerce_float(value: Any) -> Optional[float]:
 
 
 def extract_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
-    # Supports direct payloads and TTN-style wrapper under uplink_message.decoded_payload.
+    # Supports direct payloads and optional nested wrapper under uplink_message.decoded_payload.
     if "uplink_message" in payload and isinstance(payload["uplink_message"], dict):
         uplink = payload["uplink_message"]
         decoded = uplink.get("decoded_payload")
