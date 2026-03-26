@@ -342,6 +342,54 @@ html
             color: #117a65;
         }
 
+        /* Greeting Banner */
+        .greeting-banner {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--primary);
+            color: var(--text-light);
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 999;
+            animation: slideIn 0.5s ease-out;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .greeting-banner:hover {
+            background: var(--secondary);
+            color: var(--text-dark);
+        }
+
+        .greeting-banner.hidden {
+            display: none;
+        }
+
+        .greeting-banner .greeting-emoji {
+            font-size: 1.4rem;
+        }
+
+        .greeting-banner .greeting-text {
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .greeting-banner .greeting-close {
+            margin-left: 0.5rem;
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(100px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
     </style>
 </head>
 <body>
@@ -571,6 +619,21 @@ html
     </section>
 
 </div>
+
+
+<div id="greetingBanner" class="greeting-banner" role="status" aria-label="Message de bienvenue" tabindex="0" onclick="dismissGreeting()" onkeydown="if(event.key==='Enter'||event.key===' ')dismissGreeting()">
+    <span class="greeting-emoji">👋</span>
+    <span class="greeting-text">Bonjour ! Bienvenue sur BeeTwin IoT.</span>
+    <span class="greeting-close" aria-hidden="true">✕</span>
+</div>
+
+<script>
+    function dismissGreeting() {
+        var banner = document.getElementById('greetingBanner');
+        if (banner) banner.classList.add('hidden');
+    }
+    setTimeout(dismissGreeting, 8000);
+</script>
 
 </body>
 </html>
