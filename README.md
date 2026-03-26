@@ -148,6 +148,7 @@ Regle si `timestamp` absent: utiliser l'heure de reception UTC cote ingestion.
 - **influxdb-client**: ecriture/lecture InfluxDB depuis Python.
 - **Pandas / NumPy**: manipulation des series temporelles et calcul numerique.
 - **CSV**: format d'export simple pour l'evaluation du modele.
+- **Docker Compose**: orchestration portable des services (simulateur, MQTT, InfluxDB, Grafana, ingestion).
 
 ## 7) Plan de mise en place (20h)
 
@@ -212,8 +213,48 @@ Lorawan/
 
 ## 11) Comment executer localement
 
+### Mode recommande: Docker Compose (portable)
+
+1. Copier le fichier d'environnement:
+
+```bash
+copy .env.example .env
+```
+
+2. Lancer toute la stack:
+
+```bash
+docker compose up --build -d
+```
+
+3. Verifier les services:
+
+```bash
+docker compose ps
+docker compose logs -f publisher ingestion
+```
+
+4. Acces interfaces:
+
+- Grafana: http://localhost:3000
+- InfluxDB: http://localhost:8086
+- MQTT broker: localhost:1883
+
+5. Arreter la stack:
+
+```bash
+docker compose down
+```
+
+6. Arreter et supprimer les volumes (reset complet):
+
+```bash
+docker compose down -v
+```
+
 ### Prerequis
 - Python 3.10+
+- Docker Desktop (ou moteur Docker compatible Compose)
 
 ### Installation minimale
 ```bash
@@ -252,6 +293,13 @@ python model/random_data_publisher.py
 ```bash
 python model/train_eval.py
 ```
+
+### Fichiers Docker
+
+- `docker-compose.yml`: orchestration complete de la stack.
+- `infra/docker/python-app.Dockerfile`: image Python pour simulateur et ingestion.
+- `infra/mosquitto/mosquitto.conf`: configuration du broker MQTT local.
+- `.env.example`: variables a copier dans `.env`.
 
 ## 12) Convention MQTT recommandee
 
