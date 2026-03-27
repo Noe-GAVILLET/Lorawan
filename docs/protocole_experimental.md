@@ -30,7 +30,6 @@ Evaluer si un jumeau numerique simple de ruche peut produire une prediction cour
 - temperature_real (C)
 - masse_real (kg)
 - timestamp (ISO-8601)
-- battery (V, optionnelle)
 
 ### Variables derivees
 - temperature_pred (C)
@@ -39,7 +38,7 @@ Evaluer si un jumeau numerique simple de ruche peut produire une prediction cour
 
 ## 4) Instrumentation
 
-- Application Python de simulation aleatoire (temperature, masse, battery).
+- Application Python de simulation aleatoire (temperature, masse).
 - Transport MQTT vers pipeline d'ingestion Python.
 - Stockage InfluxDB.
 - Visualisation Grafana.

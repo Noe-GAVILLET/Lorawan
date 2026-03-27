@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
@@ -17,6 +18,7 @@ MQTT_PORT = int(env("MQTT_PORT", "1883"))
 MQTT_TOPIC = env("MQTT_TOPIC", "hive/+/telemetry")
 MQTT_USERNAME = env("MQTT_USERNAME", "")
 MQTT_PASSWORD = env("MQTT_PASSWORD", "")
+MQTT_CONNECT_RETRY_SECONDS = float(env("MQTT_CONNECT_RETRY_SECONDS", "5"))
 
 INFLUX_URL = env("INFLUX_URL", "http://localhost:8086")
 INFLUX_TOKEN = env("INFLUX_TOKEN", "")
@@ -67,7 +69,6 @@ def extract_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
 
     temperature = coerce_float(payload.get("temperature") or payload.get("temp"))
     mass = coerce_float(payload.get("mass") or payload.get("weight"))
-    battery = coerce_float(payload.get("battery") or payload.get("vbatt"))
 
     if temperature is None or mass is None:
         raise ValueError("Payload missing required fields: temperature and mass")
@@ -75,7 +76,6 @@ def extract_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "temperature": temperature,
         "mass": mass,
-        "battery": battery,
         "timestamp": parse_timestamp(payload),
     }
 
@@ -105,15 +105,24 @@ def on_message(client: mqtt.Client, userdata: Any, msg: mqtt.MQTTMessage) -> Non
             .time(fields["timestamp"], WritePrecision.S)
         )
 
-        if fields["battery"] is not None:
-            point = point.field("battery", fields["battery"])
-
         write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=point)
         print(
             f"Written device={device_id} temp={fields['temperature']} mass={fields['mass']}"
         )
     except Exception as exc:
         print(f"Message processing error on topic {msg.topic}: {exc}")
+
+
+def connect_with_retry(client: mqtt.Client) -> None:
+    while True:
+        try:
+            client.connect(MQTT_HOST, MQTT_PORT, 60)
+            return
+        except Exception as exc:
+            print(
+                f"MQTT connection failed ({exc}). Retrying in {MQTT_CONNECT_RETRY_SECONDS}s..."
+            )
+            time.sleep(MQTT_CONNECT_RETRY_SECONDS)
 
 
 def main() -> None:
@@ -125,7 +134,7 @@ def main() -> None:
     mqtt_client.on_connect = on_connect
     mqtt_client.on_message = on_message
 
-    mqtt_client.connect(MQTT_HOST, MQTT_PORT, 60)
+    connect_with_retry(mqtt_client)
     mqtt_client.loop_forever()
 
 

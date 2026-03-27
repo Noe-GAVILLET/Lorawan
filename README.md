@@ -59,7 +59,6 @@ Le detail du protocole est dans `docs/protocole_experimental.md`.
 | `timestamp` | `timestamp` | ISO-8601 UTC | recommande |
 | `temperature` | `temperature_real` | C | oui |
 | `mass` | `masse_real` | kg | oui |
-| `battery` | `battery` | V | non |
 
 Regle si `timestamp` absent: utiliser l'heure de reception UTC cote ingestion.
 
@@ -321,8 +320,7 @@ hive/ruche-01/telemetry
 {
     "timestamp": "2026-03-26T08:10:00Z",
     "temperature": 34.6,
-    "mass": 42.08,
-    "battery": 3.79
+    "mass": 42.08
 }
 ```
 

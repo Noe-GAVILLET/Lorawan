@@ -23,7 +23,6 @@ Documenter le jeu de donnees utilise pour l'evaluation du jumeau numerique.
 | timestamp | datetime ISO-8601 | UTC | oui | horodatage de la mesure |
 | temperature_real | float | C | oui | temperature mesuree dans la ruche |
 | masse_real | float | kg | oui | masse mesuree |
-| battery | float | V | non | tension batterie capteur |
 
 ## 5) Mapping MQTT -> CSV
 
@@ -31,7 +30,6 @@ Documenter le jeu de donnees utilise pour l'evaluation du jumeau numerique.
 |---|---|
 | temperature | temperature_real |
 | mass | masse_real |
-| battery | battery |
 | timestamp | timestamp |
 
 Si `timestamp` absent dans le message MQTT, le timestamp de reception UTC est utilise.
