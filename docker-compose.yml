@@ -74,15 +74,6 @@ services:
       - influxdb
     restart: unless-stopped
 
-  presentation:
-    image: nginx:alpine
-    container_name: lorawan_presentation
-    ports:
-      - "80:80"
-    volumes:
-      - ./presentation.html:/usr/share/nginx/html/index.html:ro
-    restart: unless-stopped
-
 volumes:
   influxdb-data:
   grafana-data:
