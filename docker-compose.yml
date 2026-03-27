@@ -50,6 +50,8 @@ services:
       MQTT_TOPIC_BASE: hive
       DEVICE_ID: ruche-01
       PUBLISH_INTERVAL_SECONDS: ${PUBLISH_INTERVAL_SECONDS}
+      SCENARIO: ${SCENARIO:-normal}
+      SPIKE_PROBABILITY: ${SPIKE_PROBABILITY:-0.08}
     depends_on:
       - mqtt
     restart: unless-stopped

@@ -1,0 +1,52 @@
+Intelligence Ambiante
+ETRS012
+
+[Logo : Université Savoie Mont Blanc]
+
+Introduction
+
+L’essor de l'Internet des objets (IoT) s’inscrit dans une transformation profonde des systèmes numériques contemporains, marquée par la multiplication de dispositifs connectés capables de capter, transmettre et exploiter des données issues du monde physique. Parmi les technologies de communication LoRaWAN occupe une place centrale en raison de sa capacité à assurer des communications longue portée à faible consommation énergétique, adaptées à des contextes contraints tels que les environnements urbains, agricoles ou industriels.
+
+Dans ce contexte, les approches purement techniques, centrées sur la performance des réseaux ou l'optimisation énergétique, montrent aujourd'hui leurs limites. En effet, le déploiement massif de systèmes IoT soulève des enjeux complexes qui dépassent la seule ingénierie : qualité et fiabilité des données, sécurité des infrastructures, protection de la vie privée, mais également acceptabilité sociale et compréhension par les utilisateurs finaux.
+
+Ce projet s'inscrit dans une perspective interdisciplinaire visant à explorer ces dimensions à travers la conception, l'implémentation et l'évaluation d'un prototype IoT basé sur LoRaWAN. L'objectif n’est pas uniquement de développer un système fonctionnel, mais de questionner les conditions de sa pertinence dans un contexte réel d’usage. En particulier, une attention spécifique sera portée à la manière dont vos choix de conception — qu’ils soient techniques, ergonomiques ou informationnels — influencent la perception, la confiance et l’appropriation du système par ses utilisateurs.
+
+Dans une démarche proche de celle de la recherche appliquée, vous devez formuler des hypothèses, concevoir un protocole expérimental, et analyser de manière critique les résultats obtenus. Cette approche permettra de mettre en évidence les interactions entre les contraintes techniques propres aux réseaux IoT (faible débit, latence, consommation énergétique) et les exigences sociétales croissantes en matière de transparence, de contrôle des données et de responsabilité numérique.
+
+Vous en fin de M2, ce projet vise à vous faire dépasser une vision strictement technocentrée, en intégrant des considérations éthiques, humaines et environnementales dès les premières étapes de la conception. Il s’inscrit pleinement dans les enjeux actuels du numérique responsable, où la performance d’un système ne se mesure plus uniquement à ses capacités techniques, mais également à sa capacité à s’intégrer de manière durable, sécurisée et acceptable dans la société.
+
+Livrables attendus
+
+Un prototype fonctionnel devra être développé, intégrant les différents composants du système IoT et la communication via LoRaWAN. Il devra démontrer la faisabilité de la solution proposée.
+
+Vous devez constituer un jeu de données exploitable issu de votre expérimentation, correctement documenté afin d’en garantir la compréhension et la réutilisation.
+Image 1 (Page 2)
+
+Ce jeu de données fera l’objet d’une analyse quantitative, permettant de tester les hypothèses que vous avez formulées et d’évaluer les performances du système à l’aide de métriques pertinentes.
+
+Un document argumenté sur les aspects éthiques sera attendu, abordant notamment les enjeux de protection des données, de transparence et d’impact du système.
+
+Enfin, une courte revue de littérature (3 à 5 articles) permettra de situer le projet dans l’état de l’art et de justifier vos choix méthodologiques.
+
+L’ensemble devra refléter une démarche rigoureuse, articulant expérimentation, analyse et prise de recul critique.
+
+Modélisation d’un jumeau numérique IoT
+
+Objectif et fonctionnalités
+Ce projet a pour objectif de développer un jumeau numérique (digital twin) d'une ruche, capable de simuler son état et son évolution à partir de données collectées en temps réel via des capteurs IoT. En s’appuyant sur des mesures physiques issues du terrain, le modèle numérique vise à reproduire le comportement global de la ruche et à fournir des indicateurs utiles pour le suivi de sa santé et de son activité.
+
+Le système repose sur l’acquisition de données à l’aide de capteurs embarqués, notamment la mesure du poids (permettant d’estimer les réserves de miel et l’activité de butinage) et la température interne (indicateur clé du bon fonctionnement de la colonie). Ces données sont transmises via le protocole LoRaWAN, assurant une collecte fiable en environnement extérieur. À partir de ces mesures, un modèle dynamique est construit afin de simuler le comportement de la ruche. Ce modèle intègre notamment :
+
+    une évolution thermique, permettant d’analyser la régulation de la température interne par les abeilles ;
+
+    une estimation de la consommation et de la production de miel, basée sur les variations de poids observées.
+
+L’intérêt de cette approche réside dans la capacité à comparer les données réelles et les prédictions du modèle, afin de détecter des anomalies, anticiper certains événements (manque de ressources, essaimage) et mieux comprendre les dynamiques internes de la ruche.
+
+Question scientifique et hypothèses
+Dans quelle mesure un jumeau numérique basé sur des données peut-il prédire l’évolution d’un système physique réel ?
+
+Est-ce que les erreurs augmentent fortement en conditions extrêmes ?
+
+Méthodologie
+Collecte de données capteurs → Construction d’un modèle → simulation vs réel

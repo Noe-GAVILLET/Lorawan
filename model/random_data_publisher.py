@@ -20,6 +20,14 @@ MQTT_PASSWORD = env("MQTT_PASSWORD", "")
 PUBLISH_INTERVAL_SECONDS = float(env("PUBLISH_INTERVAL_SECONDS", "5"))
 MQTT_CONNECT_RETRY_SECONDS = float(env("MQTT_CONNECT_RETRY_SECONDS", "5"))
 
+# Mode de simulation :
+#   normal  — marche aléatoire dans les limites physiques
+#   extreme — injecte périodiquement des sauts brusques (pour tester H2)
+SCENARIO = env("SCENARIO", "normal")
+
+# Probabilité d'injecter un spike à chaque mesure en mode extreme
+SPIKE_PROBABILITY = float(env("SPIKE_PROBABILITY", "0.08"))
+
 
 def clamp(value: float, low: float, high: float) -> float:
     return max(low, min(high, value))
@@ -51,14 +59,21 @@ def main() -> None:
     temperature = 34.5
     mass = 42.0
 
-    print(f"Publishing random telemetry to topic: {topic}")
+    print(f"Publishing telemetry to topic: {topic}  [SCENARIO={SCENARIO}]")
     print("Press Ctrl+C to stop.")
 
     try:
         while True:
-            # Random walk to keep values realistic across time.
+            # Marche aléatoire de base
             temperature += random.uniform(-0.2, 0.2)
             mass += random.uniform(-0.03, 0.03)
+
+            # Mode extrême : injection périodique de spikes
+            if SCENARIO == "extreme" and random.random() < SPIKE_PROBABILITY:
+                direction_t = random.choice([-1, 1])
+                direction_m = random.choice([-1, 1])
+                temperature += direction_t * random.uniform(2.0, 5.0)
+                mass += direction_m * random.uniform(0.3, 0.8)
 
             temperature = clamp(temperature, 20.0, 45.0)
             mass = clamp(mass, 30.0, 60.0)
