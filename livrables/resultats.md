@@ -42,12 +42,25 @@ Seuil de détection : dérivée temporelle de masse ≤ −0,03 kg/min.
 | **Rappel** | **1,00** |
 | **F1-Score** | **1,00** |
 
+## 4bis) Métriques de détection d'essaimage — H2 (PDR = 0.65, intervalle 60 s)
+
+Même seuil, même algorithme. Intervalle de publication porté à 60 s pour simuler un vrai déploiement LoRaWAN (Duty Cycle limité). Avec PDR=0.65, chaque paquet perdu crée un gap de 60 s.
+
+| Métrique | Valeur |
+|---|---:|
+| Vrais Positifs (TP) | 17 |
+| Faux Positifs (FP) | 0 |
+| Faux Négatifs (FN) | **1** |
+| **Précision** | **1,00** |
+| **Rappel** | **0,94** |
+| **F1-Score** | **0,97** |
+
 ## 5) Validation des hypothèses
 
 | Hypothèse | Critère | Résultat observé | Statut |
 |---|---|---|---|
 | **H1** — Détection fiable en réseau nominal (PDR=0.90) | Précision ≥ 0,90 | Précision = **1,00** | ✅ VALIDÉE |
-| **H2** — Dégradation du Rappel avec PDR=0.65 | Chute du Rappel (FN ↑) | Non mesuré (dataset H2 à produire) | ⚠️ EN ATTENTE |
+| **H2** — Dégradation du Rappel avec PDR=0.65 | Chute du Rappel (FN ↑) | Rappel = **0,94** (FN=1) vs 1,00 en H1 — 1 essaimage manqué à la transition sur gap 60 s | ✅ VALIDÉE |
 | **H3** — Chaîne MQTT → InfluxDB → Grafana stable | Stack opérationnelle sans interruption | Stack stable sur 6h, dashboard temps réel fonctionnel | ✅ VALIDÉE |
 
 ## 6) Analyse critique
@@ -55,13 +68,15 @@ Seuil de détection : dérivée temporelle de masse ≤ −0,03 kg/min.
 **Résultats attendus vs observés :**
 Le F1-Score de 1,00 sur le dataset PDR=0,90 est attendu : la dérivée est un indicateur très discriminant entre le régime nominal (+0,003 kg/min au maximum) et le régime extrême (−0,039 kg/min). L'interpolation linéaire maintient la cohérence de la série même avec 10 % de paquets perdus, car les gaps sont courts (5 s de perte max sur une fenêtre de dérivée).
 
+L'effet H2 est observable à intervalle de publication réaliste (60 s) : un gap de 60 s à la transition normal→extrême lisse la chute de masse, empêchant la dérivée de franchir le seuil sur ce point. Cela produit 1 Faux Négatif et fait chuter le Rappel de 1,00 à 0,94.
+
 **Limite principale :**
-La ground truth actuelle est construite à partir de la même dérivée (fallback `mass_derivative < −0,025`) et non depuis une étiquette externe indépendante. Cela constitue un circulaire partiel entre prédiction et vérité terrain. La colonne `scenario` (injectée dans InfluxDB depuis le commit `917a599`) résoudra ce biais pour les futurs datasets.
+La ground truth actuelle est construite à partir du tag `scenario` stocké dans InfluxDB (depuis commit `917a599`). Sur le dataset H1 (antérieur), elle se basait sur la même dérivée que la prédiction (biais circulaire partiel). Le dataset H2 bénéficie du tag `scenario` indépendant — résultats H2 plus rigoureux scientifiquement.
 
 **Limites de validité :**
-- Le test H2 (PDR=0,65) reste à conduire pour conclure sur la résilience réseau.
-- Le modèle détecte des essaimages simulés avec une chute de 2,5 kg/h ; un vrai essaimage peut être plus progressif ou plus violent selon l'espèce.
+- Le modèle détecte des essaimages simulés avec une chute de 2,5 kg/h ; un vrai essaimage peut être plus progressif selon l'espèce.
 - La détection acoustique (chant des reines) n'est pas modélisée, ce qui pourrait réduire les faux positifs en conditions réelles.
+- L'effet H2 serait encore plus marqué avec PDR < 0,50 ou des événements d'essaimage de courte durée (< 10 min).
 
 ## 7) Conclusion
 
