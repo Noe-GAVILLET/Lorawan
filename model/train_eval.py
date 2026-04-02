@@ -20,7 +20,10 @@ CSV_PATH = os.getenv(
 # Seuils Swarming (Essaimage)
 # Si la derivée (kg / minute) est inférieure à ce seuil négatif, alerte !
 # Un essaimage provoque une forte baisse de poids.
-SWARM_DERIVATIVE_THRESHOLD = -0.05  # kg / minute
+# Seuil physique : vitesse de perte de masse en essaimage à intervalle 5 s
+# Extreme : -2.5 kg/h × (5/3600 h) / (5/60 min) ≈ -0.039 kg/min
+# Normal  : ±0.003 kg/min  →  -0.03 sépare clairement les deux régimes
+SWARM_DERIVATIVE_THRESHOLD = -0.03  # kg / minute
 
 THERMOREG_TARGET = 34.5  # °C — température cible du couvain (BEEHAVE)
 
@@ -79,8 +82,13 @@ def main() -> None:
     df['predicted_swarming'] = df['mass_derivative'] <= SWARM_DERIVATIVE_THRESHOLD
 
     # 4. Vérité terrain (Ground Truth)
-    # L'intervalle 13:30 - 14:30 est 'True' (forcé par le Publisher en mode SCENARIO=extreme).
-    df['true_swarming'] = (df['hour'] >= 13.5) & (df['hour'] <= 14.5) & (df['mass_diff'] < -0.1)
+    # Priorité : colonne 'scenario' exportée depuis InfluxDB (si disponible).
+    # Fallback : seuil à -0.025 kg/min — seul le mode extreme atteint -0.039 kg/min.
+    # Le régime nominal (butinage départ inclus) ne dépasse pas -0.003 kg/min.
+    if 'scenario' in df.columns and df['scenario'].notna().any():
+        df['true_swarming'] = df['scenario'] == 'extreme'
+    else:
+        df['true_swarming'] = df['mass_derivative'] < -0.025
 
     # 5. Métriques de classification (F1 Score)
     TP = ((df['predicted_swarming'] == True) & (df['true_swarming'] == True)).sum()

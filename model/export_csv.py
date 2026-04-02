@@ -55,7 +55,7 @@ from(bucket: "{INFLUX_BUCKET}")
   |> filter(fn: (r) => r["_field"] == "temperature" or r["_field"] == "mass")
   |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
   |> sort(columns: ["_time"])
-  |> keep(columns: ["_time", "temperature", "mass"])
+  |> keep(columns: ["_time", "temperature", "mass", "scenario"])
 """
 
     print(f"Interrogation InfluxDB ({INFLUX_URL}) bucket={INFLUX_BUCKET} range={RANGE} ...")
@@ -74,10 +74,12 @@ from(bucket: "{INFLUX_BUCKET}")
         sys.exit(1)
 
     # Nettoyage et renommage
-    df = df.rename(
-        columns={"_time": "timestamp", "temperature": "temperature_real", "mass": "masse_real"}
-    )
-    df = df[["timestamp", "temperature_real", "masse_real"]].copy()
+    rename_map = {"_time": "timestamp", "temperature": "temperature_real", "mass": "masse_real"}
+    df = df.rename(columns=rename_map)
+    keep_cols = ["timestamp", "temperature_real", "masse_real"]
+    if "scenario" in df.columns:
+        keep_cols.append("scenario")
+    df = df[keep_cols].copy()
 
     # Convertir le timestamp en ISO-8601 UTC sans fuseaux horaires dans la chaîne
     df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True).dt.strftime(

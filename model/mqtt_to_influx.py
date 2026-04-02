@@ -94,6 +94,10 @@ def extract_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
         result["lora_rssi"] = lora_rssi
     if lora_snr is not None:
         result["lora_snr"] = lora_snr
+    # Métadonnées expérimentales (string tags)
+    scenario = payload.get("scenario")
+    if isinstance(scenario, str) and scenario:
+        result["scenario"] = scenario
     return result
 
 
@@ -131,6 +135,8 @@ def on_message(client: mqtt.Client, userdata: Any, msg: mqtt.MQTTMessage) -> Non
             point = point.field("lora_rssi", fields["lora_rssi"])
         if "lora_snr" in fields:
             point = point.field("lora_snr", fields["lora_snr"])
+        if "scenario" in fields:
+            point = point.tag("scenario", fields["scenario"])
 
         write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=point)
         print(
