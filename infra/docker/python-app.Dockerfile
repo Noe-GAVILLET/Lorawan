@@ -1,5 +1,7 @@
 FROM python:3.11-slim
 
+ENV PYTHONUNBUFFERED=1
+
 WORKDIR /app
 
 COPY model/requirements.txt /tmp/requirements.txt
