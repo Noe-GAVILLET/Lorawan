@@ -6,6 +6,41 @@ import math
 from datetime import datetime, timezone
 
 import paho.mqtt.client as mqtt
+from influxdb_client import InfluxDBClient
+
+def get_last_state() -> tuple[float, float]:
+    url = os.getenv("INFLUX_URL", "")
+    token = os.getenv("INFLUX_TOKEN", "")
+    org = os.getenv("INFLUX_ORG", "")
+    bucket = os.getenv("INFLUX_BUCKET", "hive")
+    
+    mass, batt = 45.0, 4.2
+    
+    if not all([url, token, org]):
+        print("WARN: Influx credentials missing, starting from default state.")
+        return mass, batt
+        
+    try:
+        client = InfluxDBClient(url=url, token=token, org=org, timeout=5000)
+        query = f'''
+        from(bucket: "{bucket}")
+          |> range(start: -24h)
+          |> filter(fn: (r) => r._measurement == "hive_telemetry")
+          |> filter(fn: (r) => r._field == "mass" or r._field == "battery_v")
+          |> last()
+        '''
+        tables = client.query_api().query(query)
+        for table in tables:
+            for record in table.records:
+                if record.get_field() == "mass":
+                    mass = record.get_value()
+                if record.get_field() == "battery_v":
+                    batt = record.get_value()
+        print(f"INFO: Recovered state from DB: mass={mass}, battery={batt}")
+    except Exception as e:
+        print(f"WARN: Failed to query last state from InfluxDB: {e}")
+        
+    return mass, batt
 
 def env(name: str, default: str) -> str:
     return os.getenv(name, default)
@@ -51,7 +86,7 @@ def main() -> None:
     print(f"Publishing BIOLOGICAL telemetry to topic: {topic}  [SCENARIO={SCENARIO}, PDR={LORAWAN_PDR}]")
     print("Press Ctrl+C to stop.")
     
-    current_mass = 45.0 # kg
+    current_mass, battery_v = get_last_state()
     honey_consumed_per_hour_base = 0.005 # kg/h
     
     try:
@@ -87,8 +122,8 @@ def main() -> None:
             if amb_temp < 12.0:
                 internal_temp -= 0.5 * (12.0 - amb_temp) / 12.0
                 
-            # Mode "extreme" -> ESSAIMAGE brutal entre 13:30 et 14:30
-            if SCENARIO == "extreme" and 13.5 <= t_hours <= 14.5:
+            # Mode "extreme" -> ESSAIMAGE 
+            if SCENARIO == "extreme":
                 # Perte de 2.5 kg sur cette période
                 current_mass -= 2.5 * time_step_hours
                 internal_temp += random.uniform(0.5, 1.5) # Activité due au départ
@@ -96,11 +131,25 @@ def main() -> None:
             # On empêche des valeurs négatives irréalistes
             current_mass = max(current_mass, 0.0)
 
+            # Simulation Batterie, Humidité ambiante et Radio LoRa
+            battery_v -= 0.01 * time_step_hours
+            if battery_v < 3.3:
+                battery_v = 4.2 # Recharge théorique (panneau solaire ou remplacement)
+
+            amb_humidity = 60.0 + random.uniform(-5.0, 5.0)
+            
+            lora_rssi = random.uniform(-115.0, -90.0)
+            lora_snr = random.uniform(-10.0, 5.0)
+
             payload = {
                 "timestamp": now_utc.isoformat().replace("+00:00", "Z"),
                 "temperature": round(internal_temp, 2),
-                "mass": round(current_mass, 2),
-                "ambient_temp": round(amb_temp, 2)
+                "mass": round(current_mass, 4),
+                "ambient_temp": round(amb_temp, 2),
+                "ambient_humidity": round(amb_humidity, 2),
+                "battery_v": round(battery_v, 3),
+                "lora_rssi": round(lora_rssi, 1),
+                "lora_snr": round(lora_snr, 1)
             }
 
             # LoRaWAN Simulateur MAC layer (Packet loss)

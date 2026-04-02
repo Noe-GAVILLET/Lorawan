@@ -52,6 +52,10 @@ services:
       PUBLISH_INTERVAL_SECONDS: ${PUBLISH_INTERVAL_SECONDS}
       SCENARIO: ${SCENARIO:-normal}
       SPIKE_PROBABILITY: ${SPIKE_PROBABILITY:-0.08}
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_TOKEN: ${INFLUX_TOKEN}
+      INFLUX_ORG: ${INFLUX_ORG}
+      INFLUX_BUCKET: ${INFLUX_BUCKET}
     depends_on:
       - mqtt
     restart: unless-stopped

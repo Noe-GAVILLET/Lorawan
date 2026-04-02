@@ -50,7 +50,8 @@ L'objectif est de créer un **Jumeau Numérique** (Digital Twin) de ruche connec
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Moteur MQTT/Python** : Simulation biologique temps-réel (et non marche aléatoire simple).
+- **Moteur MQTT/Python** : Simulation biologique temps-réel incluant capteurs météo et matériel (Humidité ambiante, Batterie, LoRaWAN SNR/RSSI).
+- **Persistance d'État (DB)** : Le simulateur Python (publisher) interroge `InfluxDB` à son lancement via `get_last_state()` pour reprendre l'historique là où il s'est arrêté (évite les pics de graphiques).
 - **Time-Series Interpolation** : Le fichier d'évaluation IA recolle les morceaux perdus par le réseau MQTT via interpolation linéaire avant de dériver la masse.
 
 ---
@@ -96,7 +97,7 @@ Le script sortira les Vrais Positifs, Faux Positifs, la **Précision**, le **Rap
 | Protocole expérimental | `docs/protocole_experimental.md` | ✅ Mis à jour (Hypothèses IA) |
 | Document éthique | `docs/ethique.md` | ✅ Mis à jour (Respect animal) |
 | Revue de Littérature | `docs/revue_litterature.md` | ✅ Publiée (3 concepts fusionnés) |
-| Dashboard & Dataset finaux | (À produire via Grafana M2) | ⬜ Restant pour présentation |
+| Dashboard & Dataset finaux | `Grafana` | ✅ Opérationnel (Suivi complet avec détecteur d'essaimage Flux intégré) |
 
 ---
 *Ce projet démontre l'intégration bout-en-bout d'une philosophie IoT, de la modélisation embarquée (Edge) à l'analyse analytique prédictive globale (Jumeau Numérique) par Intelligence Artificielle.*
