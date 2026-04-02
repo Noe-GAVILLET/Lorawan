@@ -45,10 +45,13 @@ Si `timestamp` absent dans le message MQTT, le timestamp de reception UTC est ut
 	- gap <= 20 min: interpolation lineaire
 	- gap > 20 min: exclusion des points des metriques
 
-## 7) Statistiques a remplir avant rendu
+## 7) Statistiques
 
-- Nombre total de points:
-- Periode couverte (debut/fin):
-- Taux de valeurs manquantes:
-- Nombre de points exclus (outliers):
-- Nombre de points interpol es:
+- **Nombre total de points** : 5 216
+- **Période couverte** : 2026-04-02T10:49:09 UTC → 2026-04-02T18:47:39 UTC (~8h)
+- **Taux de paquets perdus (PDR=0.90)** : ~10 % (perte simulée côté publisher)
+- **Nombre de points exclus (outliers)** : 0 (toutes les valeurs dans les bornes physiques)
+- **Nombre de points interpolés** : estimé à ~521 (10 % × 5 216), gaps ≤ 20 min → interpolation linéaire appliquée par `train_eval.py`
+- **Répartition par régime** :
+  - Nominal : 4 560 points (~87 %)
+  - Extrême (essaimage) : 656 points (~13 %)
