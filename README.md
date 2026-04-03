@@ -1,7 +1,7 @@
 # Projet ETRS012 — Jumeau Numérique Scientifique de Ruche IoT
 
 > Cours Intelligence Ambiante — M2 Réseaux & Télécommunications  
-> **Branche de travail actuelle (`lab`)** : Refonte scientifique selon l'état de l'art (BEEHAVE, apprentissage sur séries temporelles, LoRaSim).
+> **Auteur :** Noé GAVILLET — **Version finale** (avril 2026)
 
 ---
 
@@ -11,7 +11,7 @@
 - [2. Structure du dépôt](#2-structure-du-dépôt)
 - [3. Documentation](#3-documentation)
 - [4. Installation & Démarrage Rapide](#4-installation--démarrage-rapide)
-- [5. Livrables & Avancement](#5-livrables--avancement-branche-lab)
+- [5. Livrables & Avancement](#5-livrables--avancement)
 
 ---
 
@@ -31,21 +31,24 @@ L'objectif est de créer un **Jumeau Numérique** (Digital Twin) de ruche connec
 
 ```
 .
-├── docker-compose.yml          # Orchestration des services (MQTT, InfluxDB, Grafana, Python)
-├── .env.example                # Variables d'environnement à copier vers .env
+├── docker-compose.yml              # Orchestration des services (MQTT, InfluxDB, Grafana, Python)
+├── .env.example                    # Variables d'environnement (à copier en .env)
+├── .gitignore
+├── Subject.txt                     # Énoncé du projet
 │
 ├── docs/
-│   ├── cahier_des_charges.md   # Objectifs, contraintes, hypothèses, critères d'acceptance
+│   ├── cahier_des_charges.md       # Objectifs, contraintes, hypothèses, critères d'acceptance
 │   ├── protocole_experimental.md
 │   ├── revue_litterature.md
 │   └── ethique.md
 │
 ├── model/
-│   ├── random_data_publisher.py  # Simulateur biophysique + PDR LoRaWAN
-│   ├── mqtt_to_influx.py         # Ingestion MQTT → InfluxDB
-│   ├── export_csv.py             # Export InfluxDB → CSV
-│   ├── train_eval.py             # Détection d'essaimage + métriques F1
-│   └── metrics.py                # Fonctions MAE / RMSE
+│   ├── random_data_publisher.py    # Simulateur biophysique + PDR LoRaWAN
+│   ├── mqtt_to_influx.py           # Ingestion MQTT → InfluxDB
+│   ├── export_csv.py               # Export InfluxDB → CSV
+│   ├── train_eval.py               # Détection d'essaimage + métriques F1
+│   ├── metrics.py                  # Fonctions MAE / RMSE
+│   └── requirements.txt
 │
 ├── infra/
 │   ├── docker/python-app.Dockerfile
@@ -53,7 +56,8 @@ L'objectif est de créer un **Jumeau Numérique** (Digital Twin) de ruche connec
 │
 ├── data/
 │   └── processed/
-│       └── hive_timeseries.csv   # Généré par export_csv.py
+│       ├── hive_timeseries.csv     # Série temporelle complète (généré par export_csv.py)
+│       └── hive_h2.csv             # Scénario H2 dégradé (PDR=0.65, τ=60s)
 │
 └── livrables/
     ├── dataset_description.md
@@ -78,11 +82,10 @@ L'objectif est de créer un **Jumeau Numérique** (Digital Twin) de ruche connec
 ## 4. Installation & Démarrage Rapide
 
 ### Étape 1 : Préparer l'environnement
-Copiez simplement le fichier environnement :
 ```bash
 cp .env.example .env
 ```
-*(Éditez éventuellement `.env` si vous souhaitez changer les mots de passe de Grafana/Influx)*
+*(Éditez `.env` si vous souhaitez changer les mots de passe de Grafana/InfluxDB)*
 
 ### Étape 2 : Lancer le Simulateur et la DB
 ```bash
@@ -107,19 +110,31 @@ Le script sortira les Vrais Positifs, Faux Positifs, la **Précision**, le **Rap
 
 ---
 
-## 5. Livrables & Avancement (Branche lab)
+## 5. Livrables & Avancement
 
 | Livrable | Fichier | Statut |
 |----------|---------|--------|
-| Cahier des charges | [docs/cahier_des_charges.md](docs/cahier_des_charges.md) | ✅ Créé |
-| Modèle Biologique & LPWAN | `model/random_data_publisher.py` | ✅ Remanié (Precision Apiculture) |
-| Algorithme AI d'Essaimage | `model/train_eval.py` | ✅ Remanié (Dérivée & Interpolation) |
-| Protocole expérimental | [docs/protocole_experimental.md](docs/protocole_experimental.md) | ✅ Mis à jour (Hypothèses IA) |
-| Document éthique | [docs/ethique.md](docs/ethique.md) | ✅ Mis à jour (Respect animal) |
-| Revue de Littérature | [docs/revue_litterature.md](docs/revue_litterature.md) | ✅ Publiée (3 concepts fusionnés) |
-| Description du dataset | [livrables/dataset_description.md](livrables/dataset_description.md) | ⚠️ Stats section 7 à remplir |
-| Résultats & métriques | [livrables/resultats.md](livrables/resultats.md) | ⚠️ Tableaux à remplir après expérimentation |
-| Dashboard & Dataset finaux | `Grafana` | ✅ Opérationnel (détecteur d'essaimage Flux intégré) |
+| Cahier des charges | [docs/cahier_des_charges.md](docs/cahier_des_charges.md) | ✅ Finalisé |
+| Revue de littérature | [docs/revue_litterature.md](docs/revue_litterature.md) | ✅ Finalisée |
+| Protocole expérimental | [docs/protocole_experimental.md](docs/protocole_experimental.md) | ✅ Finalisé |
+| Éthique & numérique responsable | [docs/ethique.md](docs/ethique.md) | ✅ Finalisé |
+| Description du dataset | [livrables/dataset_description.md](livrables/dataset_description.md) | ✅ Finalisée |
+| Résultats & métriques | [livrables/resultats.md](livrables/resultats.md) | ✅ Finalisés (MAE=0.635°C, F1=1.00 H1, Rappel=0.94 H2) |
+| Simulateur biophysique LoRaWAN | `model/random_data_publisher.py` | ✅ PDR=0.90/0.65, τ=5s/60s |
+| Algorithme de détection | `model/train_eval.py` | ✅ Seuil −0.03 kg/min, interpolation gaps |
+| Infrastructure Docker | `docker-compose.yml` | ✅ MQTT → InfluxDB → Grafana |
 
 ---
-*Ce projet démontre l'intégration bout-en-bout d'une philosophie IoT, de la modélisation embarquée (Edge) à l'analyse analytique prédictive globale (Jumeau Numérique) par Intelligence Artificielle.*
+
+### Métriques expérimentales clés
+
+| Métrique | H1 (nominal, PDR=0.90) | H2 (dégradé, PDR=0.65) |
+|----------|------------------------|-------------------------|
+| MAE température | 0.635 °C | 0.635 °C |
+| F1-Score essaimage | 1.00 | 0.97 |
+| Rappel essaimage | 1.00 | 0.94 |
+| Faux Négatifs | 0 | 1 |
+
+---
+*Ce projet démontre l'intégration bout-en-bout d'un système IoT LoRaWAN, de la modélisation biophysique embarquée à la détection d'essaimage par analyse de séries temporelles (Jumeau Numérique).*  
+*ETRS012 Intelligence Ambiante — M2 RT, Université Savoie Mont Blanc — Avril 2026*
