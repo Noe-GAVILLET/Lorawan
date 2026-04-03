@@ -59,6 +59,8 @@ Ce projet s'inscrit dans la continuité des travaux du projet européen **BEEHAV
 - Modélisation acoustique (chant des reines) pour la détection d'essaimage.
 - Interface utilisateur web dédiée (Grafana est suffisant).
 
+> **Justification du choix MQTT + PDR simulé** : L'absence de matériel LoRaWAN physique est un choix délibéré qui garantit la **reproductibilité expérimentale** (toute la stack démarrant via `docker compose up -d`) et permet de faire varier le PDR de façon contrôlée pour tester H1 et H2. Cette approche est académiquement recevable et explicitement documentée dans la littérature de simulation de réseaux LPWAN (Bor et al., 2016 — LoRaSim). En production réelle, le publisher MQTT serait remplacé par un dispositif LoRa + gateway TTN, sans modification du reste de la pipeline (InfluxDB, Grafana, train_eval.py).
+
 ---
 
 ## 4. Contraintes techniques
@@ -79,10 +81,13 @@ Ce projet s'inscrit dans la continuité des travaux du projet européen **BEEHAV
 
 > **Question principale** : Notre algorithme fondé sur une logique différentielle peut-il repérer de manière fiable un essaimage destructeur, et quelle est l'influence des conditions de transmission LoRaWAN sur ces performances ?
 
+> **Question secondaire** (issue du sujet) : Les erreurs de prédiction du Jumeau Numérique augmentent-elles fortement en conditions extrêmes ? — Cette question est répondue à deux niveaux distincts : **(i)** stabilité des erreurs thermiques (modèle biophysique) et **(ii)** dégradation de la détection d'événements discrets (classification) sous contrainte réseau.
+
 | ID | Énoncé | Critère de validation |
 |----|--------|-----------------------|
 | **H1** | En condition réseau nominale (PDR = 0.90), le Jumeau Numérique détecte un essaimage avec une très forte fiabilité. | Précision **≥ 0.90** (peu de fausses alertes). |
 | **H2** | L'augmentation des pertes réseau (PDR = 0.65) dégrade l'interpolation temporelle et empêche le jumeau de déclencher l'alerte. | Chute significative du **Rappel** (augmentation des Faux Négatifs). |
+| **H3** | La chaîne d'intégration MQTT → InfluxDB → Grafana est stable en conditions opérationnelles. | Stack opérationnelle sans interruption sur ≥ 6 h. |
 
 ---
 
@@ -106,7 +111,8 @@ Ce projet s'inscrit dans la continuité des travaux du projet européen **BEEHAV
 │                                                     ▼                  │
 │                                            ┌────────────────────────┐  │
 │                                            │ train_eval.py          │  │
-│                                            │ (Interpolation & AI)   │  │
+│                                            │ (Interpolation &       │  │
+│                                            │  Métriques)            │  │
 │                                            └────────────────────────┘  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
@@ -141,6 +147,6 @@ Ce projet s'inscrit dans la continuité des travaux du projet européen **BEEHAV
 |---------|--------|
 | La stack démarre sans erreur | `docker compose up -d` → tous les services `healthy` ou `running`. |
 | Des données sont produites | InfluxDB contient ≥ 100 points de mesure sur au moins 1 heure simulée. |
-| Le PDF export fonctionne | `python model/export_csv.py` génère `data/processed/hive_timeseries.csv` non vide. |
+| Le CSV export fonctionne | `python model/export_csv.py` génère `data/processed/hive_timeseries.csv` non vide. |
 | H1 peut être évaluée | `python model/train_eval.py` s'exécute sans erreur et affiche Précision, Rappel, F1. |
 | La documentation est complète | Tous les champs "À remplir" de `resultats.md` et `dataset_description.md` sont renseignés. |

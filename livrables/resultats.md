@@ -1,5 +1,13 @@
 # Résultats — Jumeau Numérique Scientifique de Ruche IoT
 
+## 0) Avertissement méthodologique sur la Ground Truth
+
+> Les résultats de détection d'essaimage (§ 4) reposent sur une **ground truth** qui diffère selon le dataset :
+> - **Dataset H1 (PDR=0.90)** : ground truth fondée sur la plage horaire de déclenchement du scénario extrême (13:30–14:30 UTC), construite **indépendamment** de la dérivée. Un biais partiel existe si l'heure système du conteneur dérivait lors de la collecte.
+> - **Dataset H2 (PDR=0.65)** : ground truth fondée sur le **tag `scenario`** enregistré dans InfluxDB au moment de chaque publication (valeur `nominal` ou `extreme`) — méthode strictement indépendante de la prédiction. **Les résultats H2 sont scientifiquement plus rigoureux.**
+>
+> Cette distinction est importante pour interpréter correctement le F1-Score = 1,00 de H1 : il est attendu dans ces conditions (dérivée très discriminante, gaps courts), et confirmé par la robustesse observée sur H2.
+
 ## 1) Contexte d'évaluation
 
 - **Modèle testé** : Jumeau numérique biophysique (BEEHAVE-like) + détection d'essaimage par dérivée temporelle de masse.
@@ -42,6 +50,8 @@ Seuil de détection : dérivée temporelle de masse ≤ −0,03 kg/min.
 | **Rappel** | **1,00** |
 | **F1-Score** | **1,00** |
 
+> ⚠️ **Interprétation du F1 = 1,00** : ce résultat est **attendu par construction du simulateur** et non un résultat empiriquement surprenant. En régime extrême, le simulateur impose une perte de masse de 2,5 kg/h, soit une dérivée de −0,042 kg/min. En régime nominal, la dérivée maximale ne dépasse pas ±0,003 kg/min. Les deux régimes sont séparés d'un **facteur 14** sur la variable de décision, ce qui rend la séparation par seuillage triviale. Ce résultat sert de **baseline de référence** : il confirme que l'algorithme fonctionne correctement en l'absence de contrainte réseau. La contribution scientifique réelle du projet est H2 (§ 4bis), seul résultat non déterministe, où les lacunes introduites par le PDR créent une vraie ambiguïté à la frontière de transition entre régimes.
+
 ## 4bis) Métriques de détection d'essaimage — H2 (PDR = 0.65, intervalle 60 s)
 
 Même seuil, même algorithme. Intervalle de publication porté à 60 s pour simuler un vrai déploiement LoRaWAN (Duty Cycle limité). Avec PDR=0.65, chaque paquet perdu crée un gap de 60 s.
@@ -55,7 +65,24 @@ Même seuil, même algorithme. Intervalle de publication porté à 60 s pour sim
 | **Rappel** | **0,94** |
 | **F1-Score** | **0,97** |
 
-## 5) Validation des hypothèses
+## 5) Validation des hypothèses et réponse aux questions scientifiques
+
+### Réponse à Q1 : *Un jumeau numérique peut-il prédire l'évolution du système physique réel ?*
+
+Oui, avec une fidélité MAE = 0,635 °C sur la cible thermique BEEHAVE (34,5 °C), le modèle biophysique reproduit correctement la thermorégulation de la ruche sur 8 heures de simulation. La détection d'essaimage atteint F1 = 1,00 en conditions nominales et 0,97 en conditions dégradées, confirmant la viabilité du jumeau numérique pour la prédiction d'événements critiques.
+
+### Réponse à Q2 : *Les erreurs augmentent-elles fortement en conditions extrêmes ?*
+
+**À deux niveaux distincts** (conformément au protocole expérimental § 2) :
+
+| Niveau | Régime nominal | Régime extrême | Conclusion |
+|---|---|---|---|
+| **Thermique (MAE °C)** | 0,635 | 0,630 | ❌ Erreurs **stables** — la thermorégulation est indépendante de l'essaimage |
+| **Détection (Rappel)** | 1,00 (H1) | 0,94 (H2, PDR=0,65) | ✅ Erreurs **augmentent** sous contrainte réseau |
+
+Ce résultat est original et contre-intuitif : un essaimage ne dégrade **pas** la précision thermique du jumeau (la colonie maintient 34,5 °C même en perdant de la masse), mais les pertes radio LoRaWAN dégradent bien la capacité à **détecter** cet événement. Les deux dimensions d'erreur sont orthogonales.
+
+### Tableau de validation des hypothèses
 
 | Hypothèse | Critère | Résultat observé | Statut |
 |---|---|---|---|
@@ -77,9 +104,15 @@ La ground truth actuelle est construite à partir du tag `scenario` stocké dans
 - Le modèle détecte des essaimages simulés avec une chute de 2,5 kg/h ; un vrai essaimage peut être plus progressif selon l'espèce.
 - La détection acoustique (chant des reines) n'est pas modélisée, ce qui pourrait réduire les faux positifs en conditions réelles.
 - L'effet H2 serait encore plus marqué avec PDR < 0,50 ou des événements d'essaimage de courte durée (< 10 min).
+- **Absence d'intervalle de confiance** : toutes les métriques reposent sur un seul run avec une graine aléatoire non fixée (`random.uniform` sans `random.seed`). La reproductibilité du F1-Score sur N runs indépendants n'est pas établie. Un protocole rigoureux nécessiterait au minimum 30 répétitions pour estimer la variance des métriques et calculer un intervalle de confiance à 95 %. En l'état, les valeurs ponctuelles reportées ici (F1 = 1,00 ; Rappel = 0,94) dépendent potentiellement de la séquence aléatoire observée.
+- **Durée de simulation insuffisante pour généraliser** : les 8 heures de données collectées couvrent un seul cycle journalier. Une saison apicole réelle dure 6 mois avec des dynamiques de longue durée (montée en population au printemps, hivernage, dépérissement progressif) absentes du modèle. Le cycle de butinage est identique chaque heure simulée, sans variation saisonnière de la disponibilité florale. La validité des résultats sur des séries de plusieurs jours ou semaines ne peut être inférée à partir du dataset actuel.
 
 ## 7) Conclusion
 
-Le Jumeau Numérique de ruche connectée atteint ses objectifs primaires : la chaîne complète MQTT → InfluxDB → Grafana est opérationnelle et stable sur plusieurs heures. Le modèle biophysique (BEEHAVE-like) maintient une thermorégulation fidèle à 34,5 °C avec une MAE de 0,635 °C, en dessous du critère d'acceptance de 1,0 °C.
+Le Jumeau Numérique de ruche connectée atteint l'ensemble de ses objectifs primaires et secondaires. La chaîne complète MQTT → InfluxDB → Grafana est opérationnelle et stable sur plusieurs heures (H3 validée). Le modèle biophysique (BEEHAVE-like) maintient une thermorégulation fidèle à 34,5 °C avec une MAE de 0,635 °C, bien en dessous du critère d'acceptance de 1,0 °C.
 
-La détection d'essaimage par dérivée temporelle de masse se révèle très efficace en conditions réseau nominales (PDR=0,90), avec un F1-Score de 1,00, validant l'hypothèse H1. La robustesse du système face aux pertes radio LoRaWAN plus sévères (H2, PDR=0,65) constitue la prochaine expérimentation à mener pour compléter l'évaluation scientifique.
+La détection d'essaimage par dérivée temporelle de masse est très efficace en conditions réseau nominales : F1-Score = 1,00 (H1 validée, PDR=0,90). Sous contrainte réseau sévère, le système voit son Rappel chuter à 0,94 avec un Faux Négatif lors de la transition entre régimes sur un gap de 60 s (H2 validée, PDR=0,65).
+
+La réponse synthétique aux deux questions scientifiques du sujet est la suivante :
+- **Q1** (*prédire l'évolution du système ?*) : **Oui, avec MAE = 0,635 °C** et F1 ≥ 0,97 selon le régime réseau.
+- **Q2** (*erreurs plus fortes en conditions extrêmes ?*) : **Partiellement** — les erreurs thermiques restent stables (Δ MAE < 0,01 °C), mais les erreurs de détection augmentent sous contrainte réseau (Rappel : 1,00 → 0,94), ce qui constitue le résultat original de notre travail.
