@@ -69,15 +69,36 @@ def extract_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
 
     temperature = coerce_float(payload.get("temperature") or payload.get("temp"))
     mass = coerce_float(payload.get("mass") or payload.get("weight"))
+    ambient_temp = coerce_float(payload.get("ambient_temp") or payload.get("ambient"))
+
+    ambient_humidity = coerce_float(payload.get("ambient_humidity"))
+    battery_v = coerce_float(payload.get("battery_v"))
+    lora_rssi = coerce_float(payload.get("lora_rssi"))
+    lora_snr = coerce_float(payload.get("lora_snr"))
 
     if temperature is None or mass is None:
         raise ValueError("Payload missing required fields: temperature and mass")
 
-    return {
+    result: Dict[str, Any] = {
         "temperature": temperature,
         "mass": mass,
         "timestamp": parse_timestamp(payload),
     }
+    if ambient_temp is not None:
+        result["ambient_temp"] = ambient_temp
+    if ambient_humidity is not None:
+        result["ambient_humidity"] = ambient_humidity
+    if battery_v is not None:
+        result["battery_v"] = battery_v
+    if lora_rssi is not None:
+        result["lora_rssi"] = lora_rssi
+    if lora_snr is not None:
+        result["lora_snr"] = lora_snr
+    # Métadonnées expérimentales (string tags)
+    scenario = payload.get("scenario")
+    if isinstance(scenario, str) and scenario:
+        result["scenario"] = scenario
+    return result
 
 
 def on_connect(client: mqtt.Client, userdata: Any, flags: Dict[str, Any], rc: int) -> None:
@@ -104,10 +125,23 @@ def on_message(client: mqtt.Client, userdata: Any, msg: mqtt.MQTTMessage) -> Non
             .field("mass", fields["mass"])
             .time(fields["timestamp"], WritePrecision.S)
         )
+        if "ambient_temp" in fields:
+            point = point.field("ambient_temp", fields["ambient_temp"])
+        if "ambient_humidity" in fields:
+            point = point.field("ambient_humidity", fields["ambient_humidity"])
+        if "battery_v" in fields:
+            point = point.field("battery_v", fields["battery_v"])
+        if "lora_rssi" in fields:
+            point = point.field("lora_rssi", fields["lora_rssi"])
+        if "lora_snr" in fields:
+            point = point.field("lora_snr", fields["lora_snr"])
+        if "scenario" in fields:
+            point = point.tag("scenario", fields["scenario"])
 
         write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=point)
         print(
-            f"Written device={device_id} temp={fields['temperature']} mass={fields['mass']}"
+            f"Written device={device_id} temp={fields['temperature']} "
+            f"mass={fields['mass']} ambient={fields.get('ambient_temp', 'N/A')}"
         )
     except Exception as exc:
         print(f"Message processing error on topic {msg.topic}: {exc}")

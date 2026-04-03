@@ -1,0 +1,74 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFBFC
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 11
+skinparam shadowing false
+skinparam ArrowColor #1B3A5C
+skinparam ArrowThickness 2
+
+skinparam rectangle {
+    RoundCorner 12
+    BorderThickness 2
+}
+
+skinparam note {
+    BackgroundColor #FFF8E7
+    BorderColor #D4A017
+    BorderThickness 1.5
+    FontColor #4A4A4A
+    RoundCorner 8
+    FontSize 10
+}
+
+title
+<color:#1B3A5C><size:16><b>Figure 2 — Modulation CSS LoRa : Compromis SF vs Time-on-Air</b></size></color>
+<color:#4A4A4A><size:10><i>BW = 125 kHz · CR = 4/5 · Payload = 20 octets · Duty Cycle = 1 % (ETSI EN 300 220)</i></size></color>
+end title
+
+' ── Axe temps (représentation visuelle proportionnelle) ──────────────
+
+rectangle "**Axe Time-on-Air (ToA) — proportionnel**\n\n\
+<back:#27AE60><color:#FFFFFF>  SF7 ▌ 51 ms  </color></back> ←——————————————— ×4 par palier de SF ————————————————→ <back:#E74C3C><color:#FFFFFF>  SF12 ▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌▌ 1 318 ms  </color></back>" as AXIS #EEF2F7
+
+' ── Tableau comparatif SF7 → SF12 ────────────────────────────────────
+rectangle "**SF7**\n──────────────\nToA        : 51 ms\nDébit      : 5,47 kbps\nSensibilité: −123 dBm\nSNR min    : −6 dB\nPortée     : ~1 km\nτ_pub min  : 5,1 s\nMsgs/30min : 235 paquets\n\n<color:#27AE60>✅ Optimal détection</color>\n<color:#27AE60>✅ Duty Cycle libéré</color>\n<color:#E74C3C>⚠ Portée limitée</color>" as SF7R #1B3A5C
+
+rectangle "**SF9**\n──────────────\nToA        : 165 ms\nDébit      : 1,76 kbps\nSensibilité: −129 dBm\nSNR min    : −11,5 dB\nPortée     : ~3 km\nτ_pub min  : 16,5 s\nMsgs/30min : 109 paquets\n\n<color:#D4A017>◆ Compromis équilibré</color>\n<color:#D4A017>◆ Recommandé rucher</color>" as SF9R #2E6DA4
+
+rectangle "**SF12**\n──────────────\nToA        : 1 318 ms\nDébit      : 0,27 kbps\nSensibilité: −137 dBm\nSNR min    : −20 dB\nPortée     : ~15 km\nτ_pub min  : 131,8 s\nMsgs/30min : 9 paquets\n\n<color:#27AE60>✅ Portée maximale</color>\n<color:#E74C3C>⚠ 9 paquets/essaimage</color>\n<color:#E74C3C>⚠ Vuln. FN si PDR < 1</color>" as SF12R #8E1A1A
+
+SF7R -right-> SF9R  : <b>SF+2</b>\nToA ×3,2\nPortée ×3
+SF9R -right-> SF12R : <b>SF+3</b>\nToA ×8\nPortée ×5
+
+' ── Formules clés ────────────────────────────────────────────────────
+note bottom of SF7R
+  <b>Formule débit :</b>
+  Rb = (BW / 2^SF) × (CR / (CR+4))
+  SF7 : (125000 / 128) × (4/9) = 5 470 bps
+end note
+
+note bottom of SF9R
+  <b>Formule ToA (approx.) :</b>
+  ToA ≈ (2^SF / BW) × N_symboles
+  Dont N_preamble = 8 + N_payload symbols
+end note
+
+note bottom of SF12R
+  <b>Contrainte Duty Cycle :</b>
+  τ_pub_min = ToA / 0,01
+  SF12 → 1 318 / 0,01 = <b>131,8 s</b>
+  <color:#E74C3C>Essaimage 30 min → 9 paquets max</color>
+end note
+
+' ── Conclusion tension de conception ─────────────────────────────────
+note top of AXIS
+  <b>Tension de conception fondamentale pour les systèmes d'alerte IoT</b>
+  ─────────────────────────────────────────────────────────────────────
+  <color:#E74C3C>SF élevé</color>  →  Portée ↑  |  ToA ↑  |  τ_pub_min ↑  |  Paquets/essaimage ↓  |  Risque FN ↑
+  <color:#27AE60>SF bas</color>    →  Portée ↓  |  ToA ↓  |  τ_pub_min ↓  |  Paquets/essaimage ↑  |  Risque FN ↓
+  ─────────────────────────────────────────────────────────────────────
+  Compromis recommandé pour rucher isolé (portée 3–5 km) : <b>SF9–SF10</b>
+end note
+
+@enduml
